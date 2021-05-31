@@ -3,12 +3,27 @@ import json
 import requests
 
 
-def get_products(headers, number_of_results=100, after_id="", size=100):
+def get_products(headers,
+                 number_of_results=100,
+                 after_id="",
+                 size=100,
+                 search_string="",
+                 sort_method="",
+                 direction="DESC"
+                 ):
     variables_filter = ""
     if after_id != "":
-        variables_filter = f"last: {number_of_results}"
+        variables_filter = f'last: {number_of_results}'
     else:
         variables_filter = f'last: {number_of_results} after: "{after_id}"'
+    if search_string != "":
+        variables_filter += f'filter: {{search:"{search_string}"}}'
+
+    if sort_method != "":
+        if direction != "DESC":
+            direction = "ASC"
+        variables_filter += f'sortBy: {{field: {sort_method}, direction: {direction}}}'
+
     query = f"""query {{
               products({variables_filter}) {{
                 edges {{
@@ -126,7 +141,7 @@ def main():
     gql_endpoint = "http://localhost:8000/graphql/"
     auth_token = "8gAa53gDE9o5xfoTrAbG76nV5eSYB4"
     headers = {"Authorization": "Bearer {}".format(auth_token)}
-    product_list = get_products(headers, 100)
+    product_list = get_products(headers,  search_string="shirt", sort_method="NAME", direction="DESC")
     for product in product_list['data']['products']['edges']:
         print(product['node'])
 
