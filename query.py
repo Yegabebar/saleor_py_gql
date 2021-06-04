@@ -1,6 +1,63 @@
 import json
-
 import requests
+
+
+def get_auth_query():
+    return """fragment
+                User
+                on
+                User
+                {
+                    id
+                email
+                firstName
+                lastName
+                userPermissions
+                {
+                    code
+                name
+                }
+                avatar
+                {
+                    url
+                }
+                }
+                mutation
+                TokenAuth($email: String = "admin@admin.admin", $password: String = "P455w0rd") {
+                    tokenCreate(email: $email, password: $password) {
+                    errors: accountErrors {
+                        field
+                        message
+                }
+                csrfToken
+                token
+                user
+                {
+                    ...
+                User
+                }
+                }
+                }"""
+
+
+def list_customers():
+    return """query customers($first: Int = 10){
+              customers(first: $first){
+                pageInfo{
+                  hasPreviousPage
+                  hasNextPage
+                    startCursor
+                }
+                edges{
+                  node{
+                    id
+                    firstName
+                    lastName
+                    email
+                  }
+                }
+              }
+            }"""
 
 
 def get_products(headers,
@@ -138,12 +195,21 @@ def graphql_request(query, headers={},
 
 
 def main():
-    gql_endpoint = "http://localhost:8000/graphql/"
-    auth_token = "8gAa53gDE9o5xfoTrAbG76nV5eSYB4"
-    headers = {"Authorization": "Bearer {}".format(auth_token)}
-    product_list = get_products(headers,  search_string="shirt", sort_method="NAME", direction="DESC")
-    for product in product_list['data']['products']['edges']:
-        print(product['node'])
+    response = ""
+    try:
+        response = graphql_request(get_auth_query())
+        auth_token = response['data']['tokenCreate']['token']
+        headers = {"Authorization": "Bearer {}".format(auth_token)}
+        print(graphql_request(list_customers(), headers))
+
+    except Exception as e:
+        print("", e)
+    print(response)
+
+    # Product list
+    # product_list = get_products(headers,  search_string="shirt", sort_method="NAME", direction="DESC")
+    # for product in product_list['data']['products']['edges']:
+    #     print(product['node'])
 
 
 if __name__ == '__main__':
