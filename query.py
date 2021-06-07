@@ -1,4 +1,5 @@
 import json
+
 import requests
 
 
@@ -9,38 +10,35 @@ def get_auth_query():
                 User
                 {
                     id
-                email
-                firstName
-                lastName
-                userPermissions
-                {
-                    code
-                name
-                }
-                avatar
-                {
-                    url
-                }
+                    email
+                    firstName
+                    lastName
+                    userPermissions{
+                            code
+                            name
+                        }
+                    avatar{
+                            url
+                        }
                 }
                 mutation
                 TokenAuth($email: String = "admin@admin.admin", $password: String = "P455w0rd") {
                     tokenCreate(email: $email, password: $password) {
-                    errors: accountErrors {
-                        field
-                        message
-                }
-                csrfToken
-                token
-                user
-                {
-                    ...
-                User
-                }
-                }
+                        errors: accountErrors {
+                            field
+                            message
+                        }
+                        csrfToken
+                        token
+                        user
+                        {
+                            ...User
+                        }
+                    }
                 }"""
 
 
-def list_customers():
+def query_list_customers():
     return """query customers($first: Int = 10){
               customers(first: $first){
                 pageInfo{
@@ -182,7 +180,8 @@ def graphql_request(query, headers={},
         endpoint,
         headers=headers,
         json={
-            'query': query
+            'query': query,
+            
         }
     )
 
@@ -198,18 +197,21 @@ def main():
     response = ""
     try:
         response = graphql_request(get_auth_query())
+        print(response['data']['tokenCreate']['user']['id'])
+
         auth_token = response['data']['tokenCreate']['token']
-        headers = {"Authorization": "Bearer {}".format(auth_token)}
-        print(graphql_request(list_customers(), headers))
+        headers = {"Authorization": "JWT {}".format(auth_token)}
+        print("HEADERS: ", headers)
+        print("RESPONSE: ", graphql_request(query_list_customers(), headers))
 
     except Exception as e:
         print("", e)
     print(response)
 
     # Product list
-    # product_list = get_products(headers,  search_string="shirt", sort_method="NAME", direction="DESC")
+    # product_list = get_products(headers, search_string="shirt", sort_method="NAME", direction="DESC")
     # for product in product_list['data']['products']['edges']:
-    #     print(product['node'])
+    # print(product['node'])
 
 
 if __name__ == '__main__':
